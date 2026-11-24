@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Honorarios por Temporalidad | Gobierno CDMX</title>
+  <script src="vendor/jspdf.umd.min.js" defer></script>
+  <script src="vendor/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="vendor/exceljs.min.js" defer></script>
+  <script src="report-excel.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -23,72 +27,52 @@
     .card-cdmx { background: #fff; border: 1px solid rgba(188,149,92,.35); box-shadow: 0 4px 20px -2px rgba(105,28,50,.05); }
     .table-cdmx { font-family: 'Inter', sans-serif; font-size: 14px; }
     .summary-card { min-height: 150px; }
+    .print-report { display: none; }
     @media print {
-      @page { size: A4 portrait; margin: 9mm; }
-      html, body { height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; background: #fff !important; color: #111827 !important; font: 8pt/1.25 Inter, Arial, sans-serif !important; }
+      @page { size: letter portrait; margin: 10mm; }
+      html, body { height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; background: #fff !important; color: #172033 !important; font: 9pt/1.3 Arial, sans-serif !important; }
       body { display: block !important; }
-      .no-print, footer { display: none !important; }
-      header { position: static !important; margin: 0 0 3mm !important; background: #fff !important; color: #111827 !important; border: 0 !important; border-bottom: 1.5pt solid #9F2241 !important; box-shadow: none !important; }
-      header > div { max-width: none !important; padding: 0 0 2mm !important; display: block !important; }
-      header h1 { color: #691C32 !important; font-size: 14pt !important; }
-      header .h-12 { display: none !important; }
-      main { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-      main.space-y-6 > section { margin: 0 0 2.5mm !important; }
-      .card-cdmx, .summary-card { background: #fff !important; border: .6pt solid #d5dbe3 !important; border-radius: 2mm !important; box-shadow: none !important; }
-      .print-date-panel, .organization-panel { padding: 2.5mm !important; }
-      .print-title-row { padding-bottom: 1.5mm !important; }
-      .print-date-panel h2, .organization-panel h2, #summary-title { font-size: 9pt !important; color: #691C32 !important; }
-      .print-date-panel .period-content { display: grid !important; grid-template-columns: 1.1fr .9fr !important; gap: 2mm !important; }
-      .print-date-panel .period-content > div:last-child { background: #f8fafc !important; border: .5pt solid #d5dbe3 !important; color: #111827 !important; box-shadow: none !important; padding: 2mm !important; }
-      .print-date-panel .period-content > div:last-child * { color: #111827 !important; }
-      #daysRuleNotice { font-size: 6.5pt !important; }
-      #displayDays { font-size: 16pt !important; }
-      input, select { color: #111827 !important; background: #fff !important; font-size: 7.5pt !important; padding: 1mm !important; border: 0 !important; border-bottom: .5pt solid #94a3b8 !important; font-weight: 600 !important; appearance: none !important; }
-      #organizationLoadMessage, #organizationFallbackWrap { display: none !important; }
-      #summary-title { margin: 0 0 1mm !important; }
-      #summary-description { display: none !important; }
-      .summary-grid { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 2mm !important; }
-      .summary-card { min-height: 0 !important; height: 22mm !important; padding: 2mm !important; }
-      .summary-card h3 { font-size: 14pt !important; line-height: 1.1 !important; margin-top: 1mm !important; }
-      .summary-card p, .summary-card .summary-label, .summary-card .summary-foot { font-size: 6.5pt !important; }
-      .summary-card .summary-icon { display: none !important; }
-      .print-grand-total { background: #fff !important; color: #111827 !important; border: 1pt solid #9F2241 !important; }
-      .print-grand-total * { color: #111827 !important; }
-      .print-grand-total .total-label { background: #f8fafc !important; }
-      .print-grand-total #grandTotal { font-size: 16pt !important; }
-      section[aria-labelledby="table-title"] { break-before: page !important; page-break-before: always !important; margin-top: 0 !important; }
-      section[aria-labelledby="table-title"] > div:first-child { padding: 1.5mm 0 !important; background: #fff !important; }
-      #table-title { font-size: 10pt !important; color: #691C32 !important; }
-      .overflow-x-auto { overflow: visible !important; }
-      .table-cdmx { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; font-size: 7pt !important; }
-      .table-cdmx thead { display: table-header-group !important; }
-      .table-cdmx th, .table-cdmx td { padding: 1.2mm 1mm !important; line-height: 1.15 !important; border-bottom: .5pt solid #d5dbe3 !important; color: #111827 !important; overflow-wrap: anywhere !important; }
-      .table-cdmx thead tr { background: #f1f5f9 !important; }
-      .table-cdmx th { color: #111827 !important; font-size: 6.5pt !important; }
-      .table-cdmx th:nth-child(1) { width: 12%; }
-      .table-cdmx th:nth-child(2), .table-cdmx th:nth-child(3) { width: 18%; }
-      .table-cdmx th:nth-child(4) { width: 15%; }
-      .table-cdmx th:nth-child(5) { width: 18%; }
-      .table-cdmx th:nth-child(6) { width: 19%; }
-      .table-cdmx tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
-      .quantity-controls button, .quantity-controls input { display: none !important; }
-      .quantity-print-value { display: inline !important; font-weight: 700 !important; }
-      .level-badge { background: #f1f5f9 !important; color: #111827 !important; border: .5pt solid #d5dbe3 !important; box-shadow: none !important; font-size: 6.5pt !important; }
-      .signature-section { break-inside: avoid !important; page-break-inside: avoid !important; padding: 2.5mm !important; margin-top: 3mm !important; }
-      .signature-section h2 { font-size: 9pt !important; margin-bottom: 1.5mm !important; }
-      .signature-input { min-height: 6mm !important; border: 0 !important; border-bottom: .6pt solid #111827 !important; background: transparent !important; }
-      .signature-line { border-top: .6pt solid #111827; }
-      .signature-section .pt-8 { padding-top: 5mm !important; }
-      .print-meta { display: block !important; font-size: 7pt !important; margin-top: 2mm !important; }
-      .empty-table-message { display: none !important; }
+      body > header, body > main, body > footer { display: none !important; }
+      .print-report { display: block !important; width: 100%; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .print-report * { box-sizing: border-box; }
+      .report-heading { border-bottom: 2pt solid #9F2241; padding-bottom: 3mm; margin-bottom: 4mm; }
+      .report-heading .report-brand { color: #691C32; font-size: 9pt; font-weight: 700; letter-spacing: .08em; }
+      .report-heading h1 { color: #691C32; font-size: 19pt; line-height: 1.2; font-weight: 700; margin: 1.5mm 0 0; }
+      .report-heading p { margin: 1mm 0 0; color: #556070; font-size: 8pt; }
+      .report-parameters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2.5mm 4mm; border: .6pt solid #D9DEE5; border-radius: 2mm; padding: 3mm; margin: 0 0 3mm; }
+      .report-parameters dt { color: #556070; font-size: 7.5pt; margin-bottom: .6mm; }
+      .report-parameters dd { margin: 0; font-size: 9pt; font-weight: 700; overflow-wrap: anywhere; }
+      .report-parameters .report-organization { grid-column: 1 / -1; }
+      .report-parameters .report-funding { grid-column: 1 / -1; }
+      .report-rule { color: #556070; font-size: 7.5pt; margin: 0 0 3mm; }
+      .report-summary { display: grid; grid-template-columns: .8fr 1fr 1.2fr; gap: 2mm; margin-bottom: 4mm; }
+      .report-summary > div { background: #F5F6F8; border: .6pt solid #D9DEE5; border-radius: 2mm; padding: 3mm; }
+      .report-summary span { display: block; color: #556070; font-size: 7.5pt; }
+      .report-summary strong { display: block; margin-top: 1.5mm; font-size: 14pt; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .report-summary .report-total { background: #691C32; border-color: #691C32; color: #FFF; }
+      .report-summary .report-total span { color: #FFF; }
+      .print-report h2 { margin: 0 0 2mm; color: #691C32; font-size: 10pt; font-weight: 700; }
+      .report-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 8pt; margin-bottom: 2mm; font-variant-numeric: tabular-nums; }
+      .report-table th { background: #691C32; color: #FFF; font-size: 7.5pt; font-weight: 700; line-height: 1.25; padding: 2.2mm 1.5mm; text-align: right; }
+      .report-table th:first-child, .report-table td:first-child { text-align: left; }
+      .report-table th:nth-child(4), .report-table td:nth-child(4) { text-align: center; }
+      .report-table td { border-bottom: .5pt solid #D9DEE5; padding: 1.8mm 1.5mm; text-align: right; white-space: nowrap; }
+      .report-table tbody tr:nth-child(even) { background: #F5F6F8; }
+      .report-table tr { break-inside: avoid; }
+      .report-table tfoot td { background: #F0E8EB; border-top: 1pt solid #9F2241; color: #691C32; font-weight: 700; padding-top: 2.2mm; padding-bottom: 2.2mm; }
+      .report-month { margin: 0; text-align: right; color: #556070; font-size: 8pt; }
+      .report-validation { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12mm; margin-top: 7mm; break-inside: avoid; }
+      .report-validation .report-validator { min-height: 9mm; font-size: 9pt; overflow-wrap: anywhere; }
+      .report-signature { border-top: .6pt solid #596273; margin-top: 12mm; padding-top: 1.5mm; text-align: center; color: #556070; font-size: 8pt; }
+      .report-timestamp { border-top: .5pt solid #D9DEE5; margin-top: 4mm; padding-top: 2mm; color: #556070; font-size: 7pt; }
     }
   </style>
 </head>
 <body class="min-h-screen text-slate-800 selection:bg-cdmx-guinda selection:text-white">
 <header class="sticky top-0 z-40 bg-cdmx-guindaDark text-white shadow-md border-b-4 border-cdmx-dorado">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
-    <div class="flex items-center gap-4"><div class="h-12 w-12 rounded-xl bg-white text-cdmx-guinda flex items-center justify-center shadow-lg text-2xl border border-cdmx-doradoLight"><i class="fa-solid fa-landmark-flag" aria-hidden="true"></i></div><div><div class="flex items-center gap-2"><span class="text-[10px] font-black uppercase tracking-widest bg-cdmx-dorado text-slate-900 px-2 py-0.5 rounded">DGDYPO</span><span class="text-xs text-cdmx-doradoLight">| Honorarios SUN</span></div><h1 class="text-xl sm:text-2xl font-black">Calculadora por Temporalidad</h1></div></div>
-    <div class="flex items-center gap-2 w-full sm:w-auto justify-end no-print"><button onclick="clearAllQuantities()" type="button" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20"><i class="fa-solid fa-eraser text-cdmx-doradoLight"></i> Reiniciar</button><button onclick="exportCSV()" type="button" class="px-3 py-2 rounded-lg bg-white/10 text-cdmx-doradoLight text-xs font-semibold border border-cdmx-dorado/40"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button><button onclick="downloadPDF()" type="button" class="px-3 py-2 rounded-lg bg-cdmx-dorado text-slate-900 text-xs font-bold"><i class="fa-solid fa-file-pdf"></i> Descargar PDF</button></div>
+    <div class="flex items-center gap-4"><div class="h-12 w-12 rounded-xl bg-white text-cdmx-guinda flex items-center justify-center shadow-lg text-2xl border border-cdmx-doradoLight"><i class="fa-solid fa-landmark-flag" aria-hidden="true"></i></div><div><div class="flex items-center gap-2"><span class="text-[10px] font-black uppercase tracking-widest bg-cdmx-dorado text-slate-900 px-2 py-0.5 rounded">DGDYPO</span><span class="text-xs text-cdmx-doradoLight">| Honorarios SUN</span></div><h1 class="text-xl sm:text-2xl font-black">Calculadora de Honorarios por Temporalidad</h1></div></div>
+    <div class="flex items-center gap-2 w-full sm:w-auto justify-end no-print"><button onclick="clearAllQuantities()" type="button" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20"><i class="fa-solid fa-eraser text-cdmx-doradoLight"></i> Reiniciar</button><button id="exportExcelButton" onclick="exportExcel()" type="button" class="px-3 py-2 rounded-lg bg-white/10 text-cdmx-doradoLight text-xs font-semibold border border-cdmx-dorado/40 disabled:opacity-60"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button><button onclick="downloadPDF()" type="button" class="px-3 py-2 rounded-lg bg-cdmx-dorado text-slate-900 text-xs font-bold"><i class="fa-solid fa-file-pdf"></i> Descargar PDF</button></div>
   </div>
 </header>
 <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -108,16 +92,62 @@
 
   <section class="card-cdmx rounded-2xl overflow-hidden" aria-labelledby="table-title"><div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"><div><h2 id="table-title" class="text-base font-bold text-cdmx-guindaDark"><i class="fa-solid fa-table-cells text-cdmx-doradoDark"></i> Tabulador de niveles y folios</h2><p class="text-sm text-slate-500 mt-1">Se muestran los niveles con folios asignados. Para agregar otro nivel, use “Mostrar niveles en cero”.</p></div><button id="toggleZeroRows" onclick="toggleZeroRowsVisibility()" type="button" class="no-print text-sm font-semibold text-cdmx-guinda border border-cdmx-guinda/30 rounded-lg px-3 py-2"><i class="fa-solid fa-eye"></i> Mostrar niveles en cero</button></div><p id="emptyTableMessage" class="empty-table-message px-4 py-5 text-sm text-slate-500 text-center">Aún no hay folios asignados. Muestre los niveles en cero para comenzar.</p><div class="overflow-x-auto"><table class="table-cdmx w-full text-left border-collapse"><thead><tr class="bg-cdmx-guindaDark text-white font-bold uppercase tracking-wide"><th class="py-3 px-4 text-center">Nivel</th><th class="py-3 px-4 text-right">Monto Mensual Base ($)</th><th class="py-3 px-4 text-right">Tarifa Diaria (Base / 30)</th><th class="py-3 px-4 text-center">Cantidad de Folios</th><th class="py-3 px-4 text-right">Monto por Día / Folios ($)</th><th class="py-3 px-4 text-right">Subtotal Temporada ($)</th></tr></thead><tbody id="calculatorTableBody" class="divide-y divide-slate-200 bg-white"></tbody></table></div></section>
 
-  <section class="signature-section card-cdmx rounded-2xl p-5" aria-labelledby="validation-title"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5"><div class="w-full sm:max-w-xl"><h2 id="validation-title" class="text-sm font-bold uppercase text-cdmx-guinda mb-3">Validó por</h2><label for="validatedBy" class="block text-sm font-semibold mb-1">Nombre de la persona que valida</label><input id="validatedBy" type="text" autocomplete="name" class="signature-input w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-base" placeholder="Escriba el nombre completo"></div><div class="w-full sm:w-72 pt-8"><div class="signature-line"></div><p class="text-center text-xs text-slate-500 mt-2">Firma</p></div></div><div class="print-meta hidden mt-4 text-sm" id="printTimestampWrap">Fecha y hora de elaboración del reporte: <time id="printTimestamp"></time></div></section>
+  <section class="signature-section card-cdmx rounded-2xl p-5" aria-labelledby="validation-title"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5"><div class="w-full sm:max-w-xl"><h2 id="validation-title" class="text-sm font-bold uppercase text-cdmx-guinda mb-3">Validado por</h2><label for="validatedBy" class="block text-sm font-semibold mb-1">Nombre de la persona que valida</label><input id="validatedBy" type="text" autocomplete="name" class="signature-input w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-base" placeholder="Escriba el nombre completo"></div><div class="w-full sm:w-72 pt-8"><div class="signature-line"></div><p class="text-center text-xs text-slate-500 mt-2">Firma</p></div></div><div class="print-meta hidden mt-4 text-sm" id="printTimestampWrap">Fecha y hora de elaboración del reporte: <time id="printTimestamp"></time></div></section>
 </main>
 <footer class="mt-auto border-t border-slate-300 py-4 text-center text-xs text-slate-600 no-print">DGDYPO · Calculadora de Honorarios</footer>
 <script>
 const levelsData=[{level:'1175',base:84300},{level:'1157',base:65400},{level:'1156',base:58200},{level:'1155',base:51000},{level:'1154',base:45300},{level:'1153',base:39600},{level:'1150',base:34300},{level:'1148',base:29100},{level:'1145',base:23800},{level:'1142',base:21300},{level:'1140',base:18700},{level:'1136',base:16200}];
-const ORGANIZATION_CSV_URL='https://docs.google.com/spreadsheets/d/1sZgKsIrtCJ4b0aZGhpY9jLtII9YccTkdnkJ3tqQurLQ/gviz/tq?tqx=out:csv&gid=2084200037&range=B2:B';let quantities=new Array(levelsData.length).fill(0),calculatedDays=359,showZeroRows=false;
+const ORGANIZATION_CSV_URL='https://docs.google.com/spreadsheets/d/1sZgKsIrtCJ4b0aZGhpY9jLtII9YccTkdnkJ3tqQurLQ/gviz/tq?tqx=out:csv&gid=2084200037&range=B2:C';
+const organizationAcronyms=new Map();
+let quantities=new Array(levelsData.length).fill(0),calculatedDays=359,showZeroRows=false;
 function formatMXN(v){return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0)}
 window.onload=()=>{renderTableRows();setPreset('anual');loadOrganizations()};
-async function loadOrganizations(){const select=document.getElementById('organization');try{const r=await fetch(ORGANIZATION_CSV_URL,{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);const vals=parseCSVColumn(await r.text()).map(v=>v.trim()).filter(Boolean),unique=[...new Set(vals)];if(!unique.length)throw Error('No hay organismos en B2:B');select.innerHTML='<option value="">Seleccione un organismo</option>';unique.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;select.appendChild(o)});document.getElementById('organizationLoadMessage').textContent=`${unique.length} organismos cargados de Main Conforme a Ley Orgánica.`}catch(e){select.innerHTML='<option value="">Lista no disponible</option>';document.getElementById('organizationFallbackWrap').classList.remove('hidden');document.getElementById('organizationLoadMessage').textContent='No se pudo acceder a la hoja; verifique que permita lectura pública.';console.error(e)}}
-function parseCSVColumn(t){const rows=[];let row=[],field='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(c==='"'&&q&&t[i+1]==='"'){field+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){row.push(field);field=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&t[i+1]==='\n')i++;row.push(field);rows.push(row);row=[];field=''}else field+=c}if(field||row.length){row.push(field);rows.push(row)}return rows.map(r=>r[0]||'')}
+async function loadOrganizations(){
+  const select=document.getElementById('organization');
+  try{
+    const response=await fetch(ORGANIZATION_CSV_URL,{cache:'no-store'});
+    if(!response.ok)throw Error(`HTTP ${response.status}`);
+    const catalog=new Map();
+    parseCSVRows(await response.text()).forEach(([name='',acronym=''])=>{
+      name=name.trim();acronym=acronym.trim();
+      if(name&&(!catalog.has(name)||acronym))catalog.set(name,acronym);
+    });
+    if(!catalog.size)throw Error('No hay organismos en B2:C');
+    organizationAcronyms.clear();
+    select.innerHTML='<option value="">Seleccione un organismo</option>';
+    catalog.forEach((acronym,name)=>{
+      const option=document.createElement('option');
+      option.value=name;option.textContent=name;
+      select.appendChild(option);
+      organizationAcronyms.set(normalizeOrganizationName(name),acronym);
+    });
+    document.getElementById('organizationLoadMessage').textContent=`${catalog.size} organismos cargados de Main Conforme a Ley Orgánica (nombre y acrónimo).`;
+  }catch(error){
+    organizationAcronyms.clear();
+    select.innerHTML='<option value="">Lista no disponible</option>';
+    document.getElementById('organizationFallbackWrap').classList.remove('hidden');
+    document.getElementById('organizationLoadMessage').textContent='No se pudo acceder a la hoja; verifique que permita lectura pública.';
+    console.error(error);
+  }
+}
+function parseCSVRows(text){
+  const rows=[];let row=[],field='',quoted=false;
+  text=String(text).replace(/^\uFEFF/,'');
+  for(let i=0;i<text.length;i++){
+    const char=text[i];
+    if(char==='"'&&quoted&&text[i+1]==='"'){field+='"';i++}
+    else if(char==='"')quoted=!quoted;
+    else if(char===','&&!quoted){row.push(field);field=''}
+    else if((char==='\n'||char==='\r')&&!quoted){
+      if(char==='\r'&&text[i+1]==='\n')i++;
+      row.push(field);rows.push(row);row=[];field='';
+    }else field+=char;
+  }
+  if(field||row.length){row.push(field);rows.push(row)}
+  return rows;
+}
+function parseCSVColumn(text){return parseCSVRows(text).map(row=>row[0]||'')}
+function normalizeOrganizationName(value){return String(value).trim().replace(/\s+/g,' ').toLocaleUpperCase('es-MX')}
 function getOrganizationValue(){return document.getElementById('organizationFallback').value.trim()||document.getElementById('organization').value}
 function getFundingValue(){const v=document.getElementById('fundingType').value;return v==='OTRO'?document.getElementById('fundingOther').value.trim().toLocaleUpperCase('es-MX'):v}
 function handleFundingChange(){const el=document.getElementById('fundingOther'),other=document.getElementById('fundingType').value==='OTRO';el.classList.toggle('hidden',!other);if(!other)el.value=''}
@@ -131,8 +161,100 @@ function stepQuantity(i,s){quantities[i]=Math.max(0,(quantities[i]||0)+s);const 
 function clearAllQuantities(){quantities.fill(0);levelsData.forEach((_,i)=>{const e=document.getElementById(`qty-${i}`);if(e)e.value=''});updateTotals()}
 function updateTotals(){let grand=0,folios=0,daily=0,month=0,visible=0;levelsData.forEach((item,i)=>{const qty=quantities[i]||0,day=item.base/30*qty,sub=day*calculatedDays,row=document.querySelector(`tr[data-index="${i}"]`);if(row)row.hidden=!showZeroRows&&qty===0;if(qty>0)visible++;document.getElementById(`dailySubtotal-${i}`).textContent=formatMXN(day);document.getElementById(`subtotal-${i}`).textContent=formatMXN(sub);const printQty=row&&row.querySelector('.quantity-print-value');if(printQty)printQty.textContent=qty;grand+=sub;folios+=qty;daily+=day;month+=item.base*qty});document.getElementById('grandTotal').textContent=formatMXN(grand);document.getElementById('summaryTotalFolios').textContent=folios;document.getElementById('summaryDailyGlobal').textContent=formatMXN(daily);document.getElementById('summaryFullMonthCost').textContent=formatMXN(month);document.getElementById('emptyTableMessage').hidden=showZeroRows||visible>0}
 function setPrintTimestamp(){const now=new Date(),time=document.getElementById('printTimestamp');time.textContent=new Intl.DateTimeFormat('es-MX',{dateStyle:'long',timeStyle:'short',timeZone:'America/Mexico_City'}).format(now);time.dateTime=now.toISOString();document.getElementById('printTimestampWrap').classList.remove('hidden')}
-function downloadPDF(){setPrintTimestamp();window.print()}
-window.addEventListener('beforeprint',setPrintTimestamp);
+function reportEscape(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+function preparePrintReport(){
+  setPrintTimestamp();
+  const selected=levelsData.map((item,i)=>({...item,qty:quantities[i]||0})).filter(item=>item.qty>0);
+  const folios=selected.reduce((total,item)=>total+item.qty,0),daily=selected.reduce((total,item)=>total+item.base/30*item.qty,0),monthly=selected.reduce((total,item)=>total+item.base*item.qty,0),grand=selected.reduce((total,item)=>total+item.base/30*item.qty*calculatedDays,0);
+  const dateLabel=id=>{const value=document.getElementById(id).value;return value?new Intl.DateTimeFormat('es-MX',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(value+'T00:00:00')):'Sin especificar'};
+  let report=document.getElementById('printReport');
+  if(!report){report=document.createElement('article');report.id='printReport';report.className='print-report';report.setAttribute('aria-label','Reporte de honorarios para impresión');document.body.appendChild(report)}
+  report.innerHTML=`<div class="report-heading"><div class="report-brand">GOBIERNO DE LA CIUDAD DE MÉXICO · DGDYPO</div><h1>Honorarios por temporalidad</h1><p>Reporte de niveles y folios seleccionados · Importes en pesos mexicanos (MXN)</p></div>
+    <dl class="report-parameters"><div class="report-organization"><dt>Organismo</dt><dd>${reportEscape(getOrganizationValue()||'Sin especificar')}</dd></div><div class="report-funding"><dt>Tipo de financiamiento</dt><dd>${reportEscape(getFundingValue()||'Sin especificar')}</dd></div><div><dt>Fecha de inicio</dt><dd>${reportEscape(dateLabel('startDate'))}</dd></div><div><dt>Fecha de término</dt><dd>${reportEscape(dateLabel('endDate'))}</dd></div><div><dt>Días computados</dt><dd>${calculatedDays} días</dd></div></dl>
+    <p class="report-rule">${reportEscape(document.getElementById('daysRuleNotice').textContent)}</p>
+    <div class="report-summary"><div><span>Total de folios</span><strong>${folios.toLocaleString('es-MX')}</strong></div><div><span>Costo diario consolidado</span><strong>${formatMXN(daily)}</strong></div><div class="report-total"><span>Total de la temporalidad</span><strong>${formatMXN(grand)}</strong></div></div>
+    <h2>Niveles y folios seleccionados</h2>
+    <table class="report-table"><colgroup><col style="width:12%"><col style="width:18%"><col style="width:17%"><col style="width:9%"><col style="width:20%"><col style="width:24%"></colgroup><thead><tr><th>Nivel</th><th>Base mensual</th><th>Tarifa diaria<br>(Base / 30)</th><th>Folios</th><th>Importe diario<br>por folios</th><th>Subtotal<br>temporalidad</th></tr></thead><tbody>${selected.length?selected.map(item=>`<tr><td>${reportEscape(item.level)}</td><td>${formatMXN(item.base)}</td><td>${formatMXN(item.base/30)}</td><td>${item.qty.toLocaleString('es-MX')}</td><td>${formatMXN(item.base/30*item.qty)}</td><td>${formatMXN(item.base/30*item.qty*calculatedDays)}</td></tr>`).join(''):'<tr><td colspan="6">Sin niveles con folios asignados.</td></tr>'}</tbody><tfoot><tr><td colspan="3">TOTAL</td><td>${folios.toLocaleString('es-MX')}</td><td>${formatMXN(daily)}</td><td>${formatMXN(grand)}</td></tr></tfoot></table>
+    <p class="report-month">Base mensual consolidada (30 días): <strong>${formatMXN(monthly)}</strong></p>
+    <div class="report-validation"><div><h2>Validado por</h2><div class="report-validator">${reportEscape(document.getElementById('validatedBy').value.trim()||'Nombre de la persona que valida: __________________________')}</div></div><div class="report-signature">Firma</div></div>
+    <p class="report-timestamp">Fecha y hora de elaboración del reporte: ${reportEscape(document.getElementById('printTimestamp').textContent)}</p>`;
+}
+function buildPDFReport(){
+  const PDF=window.jspdf&&window.jspdf.jsPDF;
+  if(!PDF)throw new Error('No se pudo cargar la biblioteca PDF. Recargue la página e intente de nuevo.');
+  const doc=new PDF({orientation:'portrait',unit:'mm',format:'letter',compress:true});
+  if(typeof doc.autoTable!=='function')throw new Error('No se pudo cargar el formato de tabla del PDF.');
+  setPrintTimestamp();
+  const selected=levelsData.map((item,i)=>({...item,qty:quantities[i]||0})).filter(item=>item.qty>0);
+  const folios=selected.reduce((total,item)=>total+item.qty,0),daily=selected.reduce((total,item)=>total+item.base/30*item.qty,0),monthly=selected.reduce((total,item)=>total+item.base*item.qty,0),grand=selected.reduce((total,item)=>total+item.base/30*item.qty*calculatedDays,0);
+  const guinda=[105,28,50],gray=[82,94,111],ink=[23,32,51],line=[215,221,229],gold=[188,149,92];
+  const width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight(),margin=12,contentWidth=width-margin*2;
+  const write=(text,x,y,size=9.5,color=ink,weight='normal',options={})=>{doc.setFont('helvetica',weight);doc.setFontSize(size);doc.setTextColor(...color);doc.text(Array.isArray(text)?text:String(text),x,y,options)};
+  const wrapped=(value,maxWidth,size=9.5)=>{doc.setFont('helvetica','bold');doc.setFontSize(size);return doc.splitTextToSize(String(value),maxWidth)};
+  const dateLabel=id=>{const value=document.getElementById(id).value;return value?new Intl.DateTimeFormat('es-MX',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(value+'T00:00:00')):'Sin especificar'};
+  doc.setProperties({title:'Honorarios por temporalidad - DGDYPO',subject:'Niveles y folios seleccionados',author:'DGDYPO',creator:'Calculadora de Honorarios DGDYPO'});
+  write('GOBIERNO DE LA CIUDAD DE MÉXICO · DGDYPO',margin,16,8,guinda,'bold');
+  write('Honorarios por temporalidad',margin,24,19,guinda,'bold');
+  write('Reporte de niveles y folios seleccionados. Importes en pesos mexicanos (MXN).',margin,30,8.5,gray);
+  doc.setDrawColor(...gold);doc.setLineWidth(.7);doc.line(margin,33,width-margin,33);
+  const organization=wrapped(getOrganizationValue()||'Sin especificar',contentWidth-8),funding=wrapped(getFundingValue()||'Sin especificar',contentWidth-8);
+  const orgHeight=organization.length*4, fundingHeight=funding.length*4,metadataHeight=orgHeight+fundingHeight+28;
+  let y=37;
+  doc.setDrawColor(...line);doc.setLineWidth(.25);doc.roundedRect(margin,y,contentWidth,metadataHeight,2,2);
+  write('Organismo',margin+4,y+5,8,gray);write(organization,margin+4,y+10,9.5,ink,'bold');
+  const fundingY=y+orgHeight+11;
+  write('Tipo de financiamiento',margin+4,fundingY,8,gray);write(funding,margin+4,fundingY+5,9.5,ink,'bold');
+  const datesY=y+metadataHeight-10,col=contentWidth/3;
+  [['Fecha de inicio',dateLabel('startDate')],['Fecha de término',dateLabel('endDate')],['Días computados',`${calculatedDays} días`]].forEach((item,i)=>{write(item[0],margin+4+col*i,datesY,8,gray);write(item[1],margin+4+col*i,datesY+5,9,ink,'bold')});
+  y+=metadataHeight+5;
+  write(document.getElementById('daysRuleNotice').textContent,margin,y,7.7,gray);
+  y+=4;
+  const gap=2,boxWidth=(contentWidth-gap*2)/3;
+  [['Total de folios',folios.toLocaleString('es-MX')],['Costo diario consolidado',formatMXN(daily)],['Total de la temporalidad',formatMXN(grand)]].forEach((item,i)=>{
+    const x=margin+i*(boxWidth+gap),isTotal=i===2;
+    doc.setFillColor(...(isTotal?guinda:[245,246,248]));doc.setDrawColor(...(isTotal?guinda:line));doc.roundedRect(x,y,boxWidth,19,2,2,'FD');
+    write(item[0],x+3,y+5.5,8,isTotal?[255,255,255]:gray);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);const amountSize=Math.min(14,14*(boxWidth-6)/Math.max(boxWidth-6,doc.getTextWidth(item[1])));
+    write(item[1],x+3,y+13.5,amountSize,isTotal?[255,255,255]:ink,'bold');
+  });
+  y+=26;write('Niveles y folios seleccionados',margin,y,10,guinda,'bold');y+=3;
+  const body=selected.length?selected.map(item=>[item.level,formatMXN(item.base),formatMXN(item.base/30),item.qty.toLocaleString('es-MX'),formatMXN(item.base/30*item.qty),formatMXN(item.base/30*item.qty*calculatedDays)]):[[{content:'Sin niveles con folios asignados.',colSpan:6,styles:{halign:'left'}}]];
+  doc.autoTable({startY:y,margin:{left:margin,right:margin,top:margin,bottom:margin},tableWidth:contentWidth,theme:'plain',pageBreak:'avoid',rowPageBreak:'avoid',
+    head:[['Nivel','Base mensual','Tarifa diaria\n(Base / 30)','Folios','Importe diario\npor folios','Subtotal\ntemporalidad']],body,
+    foot:[[{content:'TOTAL',colSpan:3,styles:{halign:'left'}},folios.toLocaleString('es-MX'),formatMXN(daily),formatMXN(grand)]],
+    styles:{font:'helvetica',fontSize:8.5,textColor:ink,cellPadding:{top:1.8,right:1.5,bottom:1.8,left:1.5},halign:'right',valign:'middle',lineWidth:0,overflow:'linebreak'},
+    headStyles:{fillColor:guinda,textColor:[255,255,255],fontStyle:'bold',fontSize:8,cellPadding:{top:2.2,right:1.5,bottom:2.2,left:1.5}},
+    alternateRowStyles:{fillColor:[245,246,248]},footStyles:{fillColor:[240,232,235],textColor:guinda,fontStyle:'bold',fontSize:8.5},
+    columnStyles:{0:{cellWidth:contentWidth*.12,halign:'left'},1:{cellWidth:contentWidth*.18},2:{cellWidth:contentWidth*.16},3:{cellWidth:contentWidth*.09,halign:'center'},4:{cellWidth:contentWidth*.20},5:{cellWidth:contentWidth*.25}},
+    didParseCell:data=>{if(data.section==='head'&&data.column.index===0)data.cell.styles.halign='left';if(data.section==='head'&&data.column.index===3)data.cell.styles.halign='center'}
+  });
+  y=doc.lastAutoTable.finalY+5;
+  write(`Base mensual consolidada (30 días): ${formatMXN(monthly)}`,width-margin,y,8,gray,'normal',{align:'right'});
+  y+=10;write('Validado por',margin,y,10,guinda,'bold');
+  const validator=wrapped(document.getElementById('validatedBy').value.trim()||'Nombre de la persona que valida',contentWidth*.58,9.5);
+  write(validator,margin,y+6,9.5,ink,'bold');
+  const signatureY=y+Math.max(8,validator.length*4);
+  doc.setDrawColor(...gray);doc.setLineWidth(.25);doc.line(width-margin-62,signatureY,width-margin,signatureY);write('Firma',width-margin-31,signatureY+4.5,8,gray,'normal',{align:'center'});
+  const footerY=Math.max(signatureY+12,height-margin-5);
+  doc.setDrawColor(...line);doc.line(margin,footerY-4,width-margin,footerY-4);
+  write(`Elaborado el ${document.getElementById('printTimestamp').textContent}`,margin,footerY,7.5,gray);
+  write('1 / 1',width-margin,footerY,7.5,gray,'normal',{align:'right'});
+  return doc;
+}
+function getPDFFileName(){
+  const organization=getOrganizationValue();
+  const identifier=organizationAcronyms.get(normalizeOrganizationName(organization))||organization||'Sin_organismo';
+  const safePart=(value,fallback)=>String(value||fallback).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/_+/g,'_').replace(/^[_-]+|[_-]+$/g,'').slice(0,60).replace(/[_-]+$/g,'')||fallback;
+  const safeIdentifier=safePart(identifier,'Sin_organismo');
+  const funding=safePart(getFundingValue(),'Sin_financiamiento');
+  const folios=quantities.reduce((sum,quantity)=>sum+(quantity||0),0);
+  const total=levelsData.reduce((sum,item,index)=>sum+item.base/30*(quantities[index]||0)*calculatedDays,0);
+  const start=document.getElementById('startDate').value||'Sin_fecha_inicio';
+  const end=document.getElementById('endDate').value||'Sin_fecha_fin';
+  return `Honorarios_${safeIdentifier}_${folios}_Folios_${funding}_${formatMXN(total)}_del_${start}_al_${end}.pdf`;
+}
+function downloadPDF(){try{buildPDFReport().save(getPDFFileName())}catch(error){console.error(error);alert(error.message||'No se pudo generar el PDF. Intente de nuevo.')}}
+window.addEventListener('beforeprint',preparePrintReport);
 function csvEscape(v){return `"${String(v||'').replace(/"/g,'""')}"`}
 function exportCSV(){const s=document.getElementById('startDate').value,e=document.getElementById('endDate').value;let csv=`Calculadora de Honorarios DGDYPO (${s} al ${e} - ${calculatedDays} Días)\nOrganismo,${csvEscape(getOrganizationValue())}\nTipo de financiamiento,${csvEscape(getFundingValue())}\nValidó por,${csvEscape(document.getElementById('validatedBy').value.trim())}\n\nNivel,Monto Mensual Base,Tarifa Diaria (Base/30),Cantidad Folios,Costo Diario Total,Subtotal Temporada\n`;let folios=0,grand=0;levelsData.forEach((item,i)=>{const q=quantities[i]||0;if(q===0)return;const d=item.base/30*q,sub=d*calculatedDays;folios+=q;grand+=sub;csv+=[`Nivel ${item.level}`,item.base.toFixed(2),(item.base/30).toFixed(2),q,d.toFixed(2),sub.toFixed(2)].join(',')+'\n'});csv+=`\nTOTALES,,${folios} Folios,,${grand.toFixed(2)}\n`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=`Honorarios_DGDYPO_${s}_a_${e}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href)}
 </script>
